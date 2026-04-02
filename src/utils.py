@@ -77,8 +77,8 @@ def get_llm_by_provider(llm_provider, model):
 def invoke_llm(
     system_prompt,
     user_message,
-    model="gemini-1.5-flash",  # Specify the model name according to the provider
-    llm_provider="google",  # By default use Google as provider
+    model="claude-haiku-4-5-20251001",  # Specify the model name according to the provider
+    llm_provider="anthropic",  # By default use Google as provider
     response_format=None
 ):
     messages = [

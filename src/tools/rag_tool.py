@@ -2,11 +2,15 @@ import os
 from langchain_community.document_loaders import DirectoryLoader
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_chroma import Chroma
+from langchain_voyageai import VoyageAIEmbeddings
 
 def get_vector_store():
     """Get or create the vector store."""
     database_path = "database"
-    embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
+    embeddings = VoyageAIEmbeddings(
+        model="voyage-3",  # Или voyage-2
+        voyage_api_key="pa-VqaExeao4cpakPNhQncYK7nE3ZKbeP30heOshlNAdAs",
+    )
     
     if os.path.exists(database_path) and os.listdir(database_path):
         # Use the existing vector store

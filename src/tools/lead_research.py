@@ -133,7 +133,7 @@ def research_lead_on_linkedin(lead_name, lead_email):
     profile_summary = invoke_llm(
         system_prompt=SUMMARIZE_LINKEDIN_PROFILE, 
         user_message=inputs,
-        model="gemini-1.5-flash"
+        model="claude-haiku-4-5-20251001"
     )
     
     return (

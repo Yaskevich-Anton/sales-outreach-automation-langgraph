@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sales Outreach Automation</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #1a1a24;
+    --border: #2a2a3a;
+    --accent: #7c6cfc;
+    --accent2: #fc6c8f;
+    --accent3: #6cfcca;
+    --text: #e8e8f0;
+    --text-dim: #6b6b80;
+    --node-idle: #1e1e2e;
+    --node-active: #2a2040;
+    --node-done: #0f2d1f;
+    --node-done-border: #2afc8a;
+    --node-active-border: #7c6cfc;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Syne', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Animated background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 600px 400px at 20% 20%, rgba(124,108,252,0.07) 0%, transparent 70%),
+      radial-gradient(ellipse 400px 600px at 80% 80%, rgba(252,108,143,0.05) 0%, transparent 70%),
+      radial-gradient(ellipse 500px 300px at 50% 50%, rgba(108,252,202,0.03) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 40px 24px;
+  }
+
+  /* Header */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 48px;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+  }
+
+  .logo-text {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+  }
+
+  .logo-sub {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .status-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-size: 12px;
+    font-family: 'DM Mono', monospace;
+    color: var(--text-dim);
+  }
+
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent3);
+    box-shadow: 0 0 8px var(--accent3);
+  }
+
+  /* Main grid */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+
+  /* Panel */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .panel-header {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .panel-title {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .panel-icon { font-size: 16px; }
+
+  .panel-body { padding: 24px; }
+
+  /* Form */
+  .form-group { margin-bottom: 16px; }
+
+  label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    font-family: 'DM Mono', monospace;
+    margin-bottom: 6px;
+  }
+
+  input[type="text"], input[type="email"] {
+    width: 100%;
+    padding: 10px 14px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  input:focus { border-color: var(--accent); }
+
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-top: 1px solid var(--border);
+    margin-top: 8px;
+  }
+
+  .toggle-label {
+    font-size: 12px;
+    color: var(--text-dim);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .toggle {
+    position: relative;
+    width: 36px;
+    height: 20px;
+  }
+
+  .toggle input { opacity: 0; width: 0; height: 0; }
+
+  .toggle-slider {
+    position: absolute;
+    inset: 0;
+    background: var(--border);
+    border-radius: 20px;
+    cursor: pointer;
+    transition: 0.3s;
+  }
+
+  .toggle-slider::before {
+    content: '';
+    position: absolute;
+    width: 14px; height: 14px;
+    left: 3px; top: 3px;
+    background: white;
+    border-radius: 50%;
+    transition: 0.3s;
+  }
+
+  .toggle input:checked + .toggle-slider { background: var(--accent); }
+  .toggle input:checked + .toggle-slider::before { transform: translateX(16px); }
+
+  .run-btn {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, var(--accent), #6050e0);
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    transition: all 0.2s;
+    margin-top: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .run-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(124,108,252,0.4); }
+  .run-btn:active { transform: translateY(0); }
+  .run-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  .run-btn.running::after {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+    animation: shimmer 1.5s infinite;
+  }
+
+  @keyframes shimmer {
+    to { left: 100%; }
+  }
+
+  /* Progress log */
+  .log-panel {
+    background: var(--surface2);
+    border-radius: 10px;
+    padding: 16px;
+    margin-top: 16px;
+    max-height: 200px;
+    overflow-y: auto;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+  }
+
+  .log-entry {
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+  }
+
+  .log-time { color: var(--text-dim); flex-shrink: 0; }
+  .log-msg { color: var(--text); }
+  .log-msg.success { color: var(--accent3); }
+  .log-msg.error { color: var(--accent2); }
+  .log-msg.info { color: var(--accent); }
+
+  /* Right column */
+  .right-col {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  /* Graph visualization */
+  .graph-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .graph-scroll {
+    padding: 24px;
+    overflow-x: auto;
+  }
+
+  .graph-flow {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    min-width: 600px;
+  }
+
+  .graph-row {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 0;
+  }
+
+  .graph-connector-down {
+    display: flex;
+    justify-content: center;
+    height: 24px;
+    position: relative;
+  }
+
+  .graph-connector-down::after {
+    content: '';
+    position: absolute;
+    width: 1px;
+    height: 100%;
+    background: var(--border);
+    top: 0;
+  }
+
+  .graph-connector-fork {
+    display: flex;
+    justify-content: center;
+    height: 28px;
+    position: relative;
+    margin-bottom: 0;
+  }
+
+  .graph-connector-fork::before {
+    content: '';
+    position: absolute;
+    width: 60%;
+    height: 1px;
+    background: var(--border);
+    top: 28px;
+  }
+
+  .graph-connector-fork::after {
+    content: '';
+    position: absolute;
+    width: 1px;
+    height: 100%;
+    background: var(--border);
+    top: 0;
+    left: 50%;
+  }
+
+  /* Node */
+  .graph-node {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: var(--node-idle);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 12px;
+    font-family: 'DM Mono', monospace;
+    color: var(--text-dim);
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    white-space: nowrap;
+    position: relative;
+    cursor: default;
+    min-width: 180px;
+    justify-content: center;
+  }
+
+  .graph-node .node-icon { font-size: 14px; }
+
+  .graph-node.active {
+    background: var(--node-active);
+    border-color: var(--node-active-border);
+    color: var(--text);
+    box-shadow: 0 0 20px rgba(124,108,252,0.3), 0 0 0 1px rgba(124,108,252,0.2);
+    transform: scale(1.05);
+  }
+
+  .graph-node.active::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, var(--accent), transparent);
+    opacity: 0.1;
+    animation: pulse-bg 1.5s infinite;
+  }
+
+  @keyframes pulse-bg {
+    0%, 100% { opacity: 0.1; }
+    50% { opacity: 0.2; }
+  }
+
+  .graph-node.done {
+    background: var(--node-done);
+    border-color: var(--node-done-border);
+    color: var(--accent3);
+    box-shadow: 0 0 12px rgba(42,252,138,0.15);
+  }
+
+  .node-spinner {
+    width: 12px; height: 12px;
+    border: 2px solid rgba(124,108,252,0.3);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    flex-shrink: 0;
+    display: none;
+  }
+
+  .graph-node.active .node-spinner { display: block; }
+  .graph-node.active .node-icon { display: none; }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .node-check { display: none; color: var(--accent3); font-size: 12px; }
+  .graph-node.done .node-check { display: inline; }
+  .graph-node.done .node-icon { display: none; }
+
+  /* Reports section */
+  .reports-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+    padding: 24px;
+  }
+
+  .report-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    opacity: 0;
+    transform: translateY(16px);
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .report-card.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .report-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .report-tag {
+    font-size: 10px;
+    font-family: 'DM Mono', monospace;
+    font-weight: 500;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: rgba(124,108,252,0.15);
+    color: var(--accent);
+    border: 1px solid rgba(124,108,252,0.2);
+  }
+
+  .report-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+
+  .report-preview {
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    color: var(--text-dim);
+    line-height: 1.6;
+    max-height: 80px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .report-preview::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 30px;
+    background: linear-gradient(transparent, var(--surface2));
+  }
+
+  /* Links section */
+  .links-row {
+    display: flex;
+    gap: 12px;
+    padding: 0 24px 24px;
+    flex-wrap: wrap;
+  }
+
+  .ext-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    text-decoration: none;
+    font-size: 12px;
+    font-family: 'DM Mono', monospace;
+    transition: all 0.2s;
+  }
+
+  .ext-link:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    box-shadow: 0 4px 12px rgba(124,108,252,0.2);
+  }
+
+  /* Score display */
+  .score-display {
+    display: none;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 24px;
+    background: var(--surface2);
+    margin: 0 24px 16px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+  }
+
+  .score-display.visible { display: flex; }
+
+  .score-label {
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .score-value {
+    font-size: 13px;
+    font-family: 'DM Mono', monospace;
+    color: var(--accent3);
+    flex: 1;
+    line-height: 1.5;
+    max-height: 60px;
+    overflow: hidden;
+  }
+
+  /* Progress bar */
+  .progress-bar-wrap {
+    height: 3px;
+    background: var(--border);
+    border-radius: 3px;
+    margin: 0 24px 24px;
+    overflow: hidden;
+    display: none;
+  }
+
+  .progress-bar-wrap.visible { display: block; }
+
+  .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent3));
+    border-radius: 3px;
+    transition: width 0.5s ease;
+    width: 0%;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  @media (max-width: 900px) {
+    .main-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="logo">
+      <div class="logo-icon">⚡</div>
+      <div>
+        <div class="logo-text">Sales Outreach AI</div>
+        <div class="logo-sub">Automation Pipeline</div>
+      </div>
+    </div>
+    <div class="status-badge">
+      <div class="status-dot"></div>
+      <span id="statusText">Ready</span>
+    </div>
+  </header>
+
+  <div class="main-grid">
+    <!-- Left: Form -->
+    <div>
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-icon">👤</span>
+          <span class="panel-title">Данные лида</span>
+        </div>
+        <div class="panel-body">
+          <div class="form-group">
+            <label>Имя</label>
+            <input type="text" id="name" placeholder="John Smith" value="Antonio Banderos">
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="email" placeholder="john@company.com" value="xyjiurah2004@gmail.com">
+          </div>
+          <div class="form-group">
+            <label>Телефон</label>
+            <input type="text" id="phone" placeholder="+1 555 000 0000" value="+375444982541">
+          </div>
+          <div class="form-group">
+            <label>Адрес / Город</label>
+            <input type="text" id="address" placeholder="New York, USA" value="New York, Belarus">
+          </div>
+          <div class="toggle-row">
+            <span class="toggle-label">Использовать существующих лидов из Airtable</span>
+            <label class="toggle">
+              <input type="checkbox" id="useAirtable">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <button class="run-btn" id="runBtn" onclick="runPipeline()">
+            ▶ Запустить пайплайн
+          </button>
+        </div>
+      </div>
+
+      <!-- Log -->
+      <div class="panel" style="margin-top: 16px;">
+        <div class="panel-header">
+          <span class="panel-icon">📋</span>
+          <span class="panel-title">Лог выполнения</span>
+        </div>
+        <div class="log-panel" id="logPanel">
+          <div class="log-entry">
+            <span class="log-time">--:--:--</span>
+            <span class="log-msg">Ожидание запуска...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Graph + Results -->
+    <div class="right-col">
+      <!-- Graph visualization -->
+      <div class="graph-panel">
+        <div class="panel-header">
+          <span class="panel-icon">🔀</span>
+          <span class="panel-title">Граф выполнения</span>
+        </div>
+        <div class="graph-scroll">
+          <div class="graph-flow" id="graphFlow">
+            <!-- Rows will be rendered by JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Results panel -->
+      <div class="graph-panel" id="resultsPanel" style="display:none;">
+        <div class="panel-header">
+          <span class="panel-icon">📊</span>
+          <span class="panel-title">Результаты</span>
+        </div>
+
+        <div class="progress-bar-wrap visible" id="progressWrap">
+          <div class="progress-bar" id="progressBar"></div>
+        </div>
+
+        <div class="score-display" id="scoreDisplay">
+          <span class="score-label">Score</span>
+          <span class="score-value" id="scoreValue">—</span>
+        </div>
+
+        <div class="reports-grid" id="reportsGrid"></div>
+
+        <div class="links-row" id="linksRow"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Graph structure — порядок и группировка узлов
+const GRAPH_ROWS = [
+  [{ id: "get_new_leads", icon: "📥", label: "Загрузка лидов" }],
+  [{ id: "check_for_remaining_leads", icon: "🔍", label: "Проверка очереди" }],
+  [{ id: "fetch_linkedin_profile_data", icon: "💼", label: "LinkedIn профиль" }],
+  [{ id: "review_company_website", icon: "🌐", label: "Сайт компании" }],
+  [{ id: "collect_company_information", icon: "🏢", label: "Данные компании" }],
+  [
+    { id: "analyze_blog_content", icon: "📝", label: "Блог" },
+    { id: "analyze_social_media_content", icon: "📱", label: "Соц.сети" },
+    { id: "analyze_recent_news", icon: "📰", label: "Новости" },
+  ],
+  [{ id: "generate_digital_presence_report", icon: "📡", label: "Digital Presence" }],
+  [{ id: "generate_full_lead_research_report", icon: "📋", label: "Глобальный отчёт" }],
+  [{ id: "score_lead", icon: "⭐", label: "Квалификация" }],
+  [{ id: "generate_custom_outreach_report", icon: "🎯", label: "Outreach отчёт" }],
+  [{ id: "create_outreach_materials", icon: "✉️", label: "Outreach материалы" }],
+  [
+    { id: "generate_personalized_email", icon: "📧", label: "Email" },
+    { id: "generate_interview_script", icon: "🎙️", label: "SPIN скрипт" },
+  ],
+  [{ id: "await_reports_creation", icon: "⏳", label: "Ожидание" }],
+  [{ id: "save_reports_to_google_docs", icon: "📁", label: "Google Docs" }],
+  [{ id: "update_CRM", icon: "🔄", label: "Обновление CRM" }],
+];
+
+const TOTAL_NODES = GRAPH_ROWS.flat().length;
+
+// Render graph
+function renderGraph() {
+  const flow = document.getElementById('graphFlow');
+  flow.innerHTML = '';
+
+  GRAPH_ROWS.forEach((row, rowIdx) => {
+    if (rowIdx > 0) {
+      const conn = document.createElement('div');
+      conn.className = 'graph-connector-down';
+      flow.appendChild(conn);
+    }
+
+    const rowEl = document.createElement('div');
+    rowEl.className = 'graph-row';
+
+    row.forEach(node => {
+      const el = document.createElement('div');
+      el.className = 'graph-node';
+      el.id = `node-${node.id}`;
+      el.innerHTML = `
+        <div class="node-spinner"></div>
+        <span class="node-icon">${node.icon}</span>
+        <span class="node-check">✓</span>
+        <span>${node.label}</span>
+      `;
+      rowEl.appendChild(el);
+    });
+
+    flow.appendChild(rowEl);
+  });
+}
+
+function setNodeState(nodeId, state) {
+  const el = document.getElementById(`node-${nodeId}`);
+  if (!el) return;
+  el.classList.remove('active', 'done');
+  if (state === 'active') el.classList.add('active');
+  if (state === 'done') el.classList.add('done');
+}
+
+function addLog(msg, type = '') {
+  const panel = document.getElementById('logPanel');
+  const now = new Date().toTimeString().slice(0,8);
+  const entry = document.createElement('div');
+  entry.className = 'log-entry';
+  entry.innerHTML = `<span class="log-time">${now}</span><span class="log-msg ${type}">${msg}</span>`;
+  panel.appendChild(entry);
+  panel.scrollTop = panel.scrollHeight;
+}
+
+function addReport(title, preview) {
+  const grid = document.getElementById('reportsGrid');
+  const card = document.createElement('div');
+  card.className = 'report-card';
+  card.innerHTML = `
+    <div class="report-card-header">
+      <span class="report-tag">Report</span>
+    </div>
+    <div class="report-title">${title}</div>
+    <div class="report-preview">${preview.replace(/[#*`]/g, '').slice(0, 200)}</div>
+  `;
+  grid.appendChild(card);
+  setTimeout(() => card.classList.add('visible'), 50);
+}
+
+function addLink(label, url, icon) {
+  const row = document.getElementById('linksRow');
+  const a = document.createElement('a');
+  a.className = 'ext-link';
+  a.href = url;
+  a.target = '_blank';
+  a.innerHTML = `${icon} ${label}`;
+  row.appendChild(a);
+}
+
+let completedCount = 0;
+
+async function runPipeline() {
+  const btn = document.getElementById('runBtn');
+  const statusText = document.getElementById('statusText');
+
+  btn.disabled = true;
+  btn.classList.add('running');
+  btn.textContent = '⏳ Выполняется...';
+  statusText.textContent = 'Running';
+  completedCount = 0;
+
+  // Reset UI
+  document.getElementById('logPanel').innerHTML = '';
+  document.getElementById('reportsGrid').innerHTML = '';
+  document.getElementById('linksRow').innerHTML = '';
+  document.getElementById('scoreDisplay').classList.remove('visible');
+  document.getElementById('resultsPanel').style.display = 'block';
+  document.getElementById('progressBar').style.width = '0%';
+
+  GRAPH_ROWS.flat().forEach(n => setNodeState(n.id, ''));
+  addLog('Запуск пайплайна...', 'info');
+
+  const payload = {
+    name: document.getElementById('name').value,
+    email: document.getElementById('email').value,
+    phone: document.getElementById('phone').value,
+    address: document.getElementById('address').value,
+    use_airtable: document.getElementById('useAirtable').checked,
+  };
+
+  try {
+    const response = await fetch('http://localhost:8000/run', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop();
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        try {
+          const event = JSON.parse(line.slice(6));
+          handleEvent(event);
+        } catch(e) {}
+      }
+    }
+  } catch(e) {
+    addLog(`Ошибка подключения: ${e.message}`, 'error');
+    addLog('Убедитесь что бэкенд запущен: uvicorn api:app --reload --port 8000', 'error');
+  }
+
+  btn.disabled = false;
+  btn.classList.remove('running');
+  btn.textContent = '▶ Запустить снова';
+  statusText.textContent = 'Ready';
+}
+
+function handleEvent(event) {
+  switch(event.type) {
+    case 'start':
+    case 'info':
+      addLog(event.message, 'info');
+      break;
+
+    case 'graph_start':
+      addLog('Граф запущен', 'info');
+      break;
+
+    case 'node_complete':
+      // Mark previous active as done, set current as done
+      GRAPH_ROWS.flat().forEach(n => {
+        const el = document.getElementById(`node-${n.id}`);
+        if (el && el.classList.contains('active')) {
+          setNodeState(n.id, 'done');
+        }
+      });
+      setNodeState(event.node, 'done');
+      completedCount++;
+      const pct = Math.round((completedCount / TOTAL_NODES) * 100);
+      document.getElementById('progressBar').style.width = pct + '%';
+      addLog(`✓ ${event.description}`, 'success');
+      break;
+
+    case 'report_ready':
+      addReport(event.title, event.preview);
+      addLog(`📄 Отчёт готов: ${event.title}`, '');
+      break;
+
+    case 'score':
+      const scoreEl = document.getElementById('scoreDisplay');
+      scoreEl.classList.add('visible');
+      document.getElementById('scoreValue').textContent = event.value.slice(0, 150);
+      addLog('⭐ Оценка лида получена', '');
+      break;
+
+    case 'drive_link':
+      addLink('📁 Google Drive — все отчёты', event.url, '');
+      addLog('📁 Отчёты сохранены в Google Drive', 'success');
+      break;
+
+    case 'outreach_link':
+      addLink('📄 Outreach Report', event.url, '');
+      addLog('📄 Outreach документ создан в Google Docs', 'success');
+      break;
+
+    case 'done':
+      addLog('✅ Пайплайн завершён успешно!', 'success');
+      document.getElementById('progressBar').style.width = '100%';
+      break;
+
+    case 'error':
+      addLog(`❌ Ошибка: ${event.message}`, 'error');
+      break;
+  }
+}
+
+// Init
+renderGraph();
+</script>
+</body>
+</html>

@@ -69,35 +69,64 @@ class OutReachAutomationNodes:
             return "No more leads"
 
     def fetch_linkedin_profile_data(self, state: GraphState):
-        print(Fore.YELLOW + "----- Searching Lead data on LinkedIn -----\n" + Style.RESET_ALL)
+        print(
+            Fore.YELLOW
+            + "----- Searching Lead data on LinkedIn -----\n"
+            + Style.RESET_ALL
+        )
         lead_data = state["current_lead"]
         company_data = state.get("company_data", CompanyData())
-        
-        # Scrape lead linkedin profile
-        (
-            lead_profile, 
-            company_name, 
-            company_website,
-            company_linkedin_url
-        ) = research_lead_on_linkedin(lead_data.name, lead_data.email)
-        lead_data.profile = lead_profile
 
-        # Research company on linkedin
-        company_profile = research_lead_company(company_linkedin_url)
-        
-        # Update company name from LinkedIn data
-        company_data.name = company_name
-        company_data.website = company_website
-        company_data.profile = str(company_profile)
-            
-        # Update folder name for saving reports in Drive
-        self.drive_folder_name = f"{lead_data.name}_{company_data.name}"
-        
-        return {
-            "current_lead": lead_data,
-            "company_data": company_data,
-            "reports": []
-        }
+        # TODO: LinkedIn scraper не настроен (требует RAPIDAPI_KEY)
+        # Данные недоступны, подставляем заглушки для продолжения пайплайна
+        print(
+            Fore.RED
+            + "WARNING: LinkedIn scraper не настроен. Используются заглушки.\n"
+            + Style.RESET_ALL
+        )
+
+        lead_data.profile = "LinkedIn data unavailable (RAPIDAPI_KEY not configured)"
+        company_data.name = "Unknown (LinkedIn data unavailable)"
+        company_data.website = ""
+        company_data.profile = "Company data unavailable (LinkedIn data unavailable)"
+
+        self.drive_folder_name = f"{lead_data.name}_Unknown"
+
+        return {"current_lead": lead_data, "company_data": company_data, "reports": []}
+
+    # def fetch_linkedin_profile_data(self, state: GraphState):
+    #     print(Fore.YELLOW + "----- Searching Lead data on LinkedIn -----\n" + Style.RESET_ALL)
+    #     lead_data = state["current_lead"]
+    #     company_data = state.get("company_data", CompanyData())
+    #
+    #     # Scrape lead linkedin profile
+    #     result = research_lead_on_linkedin(lead_data.name, lead_data.email)
+    #     print("DEBUG result:", result)
+    #     print("DEBUG type:", type(result))
+    #     (
+    #         lead_profile,
+    #         company_name,
+    #         company_website,
+    #         company_linkedin_url
+    #     ) = research_lead_on_linkedin(lead_data.name, lead_data.email)
+    #     lead_data.profile = lead_profile
+    #
+    #     # Research company on linkedin
+    #     company_profile = research_lead_company(company_linkedin_url)
+    #
+    #     # Update company name from LinkedIn data
+    #     company_data.name = company_name
+    #     company_data.website = company_website
+    #     company_data.profile = str(company_profile)
+    #
+    #     # Update folder name for saving reports in Drive
+    #     self.drive_folder_name = f"{lead_data.name}_{company_data.name}"
+    #
+    #     return {
+    #         "current_lead": lead_data,
+    #         "company_data": company_data,
+    #         "reports": []
+    #     }
     
     def review_company_website(self, state: GraphState):
         print(Fore.YELLOW + "----- Scraping company website -----\n" + Style.RESET_ALL)
@@ -111,7 +140,7 @@ class OutReachAutomationNodes:
             website_info = invoke_llm(
                 system_prompt=WEBSITE_ANALYSIS_PROMPT.format(main_url=company_website), 
                 user_message=content,
-                model="gemini-1.5-flash",
+                model="claude-haiku-4-5-20251001",
                 response_format=WebsiteData
             )
 
@@ -138,7 +167,7 @@ class OutReachAutomationNodes:
         general_lead_search_report = invoke_llm(
             system_prompt=LEAD_SEARCH_REPORT_PROMPT, 
             user_message=inputs,
-            model="gemini-1.5-flash"
+            model="claude-haiku-4-5-20251001"
         )
         
         lead_search_report = Report(
@@ -169,26 +198,26 @@ class OutReachAutomationNodes:
             blog_analysis_report = invoke_llm(
                 system_prompt=prompt, 
                 user_message=blog_content,
-                model="gemini-1.5-flash"
+                model="claude-haiku-4-5-20251001"
             )
             blog_analysis_report = Report(
                 title="Blog Analysis Report",
                 content=blog_analysis_report,
                 is_markdown=True
             )
-        return {"reports": [blog_analysis_report]}
+            return {"reports": [blog_analysis_report]}
+        return {"reports": []}
     
     def analyze_social_media_content(self, state: GraphState):
         print(Fore.YELLOW + "----- Analyzing company social media accounts -----\n" + Style.RESET_ALL)
         
         # Load states
         company_data = state["company_data"]
-        
         # Get social media urls
         facebook_url = company_data.social_media_links.facebook
         twitter_url = company_data.social_media_links.twitter
         youtube_url = company_data.social_media_links.youtube
-        
+        reports = []
         # Check If company has Youtube channel
         if youtube_url:
             youtube_data = get_youtube_stats(youtube_url)
@@ -196,13 +225,14 @@ class OutReachAutomationNodes:
             youtube_insight = invoke_llm(
                 system_prompt=prompt, 
                 user_message=youtube_data,
-                model="gemini-1.5-flash"
+                model="claude-haiku-4-5-20251001"
             )
             youtube_analysis_report = Report(
                 title="Youtube Analysis Report",
                 content=youtube_insight,
                 is_markdown=True
             )
+            reports.append(youtube_analysis_report)
             
         # Check If company has Facebook account
         if facebook_url:
@@ -213,35 +243,47 @@ class OutReachAutomationNodes:
         if twitter_url:
             # TODO Add Twitter analysis part
             pass
+
+        if not reports:
+            empty_report = Report(
+                title="Social Media Analysis",
+                content=f"No active social media profiles (YouTube, Facebook, or Twitter) were found or analyzed for {company_data.name}.",
+                is_markdown=True,
+            )
+            reports.append(empty_report)
         
         return {
             "company_data": company_data,
-            "reports": [youtube_analysis_report]
+            "reports": reports
         }
     
     def analyze_recent_news(self, state: GraphState):
         print(Fore.YELLOW + "----- Analyzing recent news about company -----\n" + Style.RESET_ALL)
-        
+
         # Load states
         company_data = state["company_data"]
-        
         # Fetch recent news using serper API
         recent_news = get_recent_news(company=company_data.name)
+        if not recent_news:
+            recent_news = (
+                f"No recent news or articles were found for {company_data.name}."
+            )
+
         number_months = 6
         current_date = get_current_date()
         news_analysis_prompt = NEWS_ANALYSIS_PROMPT.format(
-            company_name=company_data.name, 
-            number_months=number_months, 
+            company_name=company_data.name,
+            number_months=number_months,
             date=current_date
         )
-        
+
         # Craft news analysis prompt
         news_insight = invoke_llm(
-            system_prompt=news_analysis_prompt, 
+            system_prompt=news_analysis_prompt,
             user_message=recent_news,
-            model="gemini-1.5-flash"
+            model="claude-haiku-4-5-20251001"
         )
-        
+
         news_analysis_report = Report(
             title="News Analysis Report",
             content=news_insight,
@@ -289,7 +331,7 @@ class OutReachAutomationNodes:
         digital_presence_report = invoke_llm(
             system_prompt=prompt, 
             user_message=inputs,
-            model="gemini-1.5-flash"
+            model="claude-haiku-4-5-20251001"
         ) 
         
         digital_presence_report = Report(
@@ -325,7 +367,7 @@ class OutReachAutomationNodes:
         full_report = invoke_llm(
             system_prompt=prompt, 
             user_message=inputs,
-            model="gemini-1.5-flash"
+            model="claude-haiku-4-5-20251001"
         )
         
         global_research_report = Report(
@@ -353,7 +395,7 @@ class OutReachAutomationNodes:
         lead_score = invoke_llm(
             system_prompt=SCORE_LEAD_PROMPT,
             user_message=global_research_report,
-            model="gemini-1.5-pro"
+            model="claude-haiku-4-5-20251001"
         )
         return {"lead_score": lead_score.strip()}
 
@@ -378,13 +420,15 @@ class OutReachAutomationNodes:
         """
         # Checking if the lead score is 7 or higher
         print(f"Score: {state['lead_score']}")
-        is_qualified = float(state["lead_score"]) >= 7
-        if is_qualified:
-            print(Fore.GREEN + "Lead is qualified\n" + Style.RESET_ALL)
-            return "qualified"
-        else:
-            print(Fore.RED + "Lead is not qualified\n" + Style.RESET_ALL)
-            return "not qualified"
+        return "qualified"
+        # TODO
+        # is_qualified = float(state["lead_score"]) >= 7
+        # if is_qualified:
+        #     print(Fore.GREEN + "Lead is qualified\n" + Style.RESET_ALL)
+        #     return "qualified"
+        # else:
+        #     print(Fore.RED + "Lead is not qualified\n" + Style.RESET_ALL)
+        #     return "not qualified"
     
     @staticmethod
     def create_outreach_materials(state: GraphState):
@@ -418,7 +462,7 @@ class OutReachAutomationNodes:
         custom_outreach_report = invoke_llm(
             system_prompt=GENERATE_OUTREACH_REPORT_PROMPT,
             user_message=inputs,
-            model="gemini-1.5-pro"
+            model="claude-haiku-4-5-20251001"
         )
         
         # TODO Find better way to include correct links into the final report
@@ -438,7 +482,7 @@ class OutReachAutomationNodes:
         revised_outreach_report = invoke_llm(
             system_prompt=PROOF_READER_PROMPT,
             user_message=inputs,
-            model="gemini-1.5-flash"
+            model="claude-haiku-4-5-20251001",
         )
         
         # Store report into google docs and get shareable link
@@ -481,7 +525,7 @@ class OutReachAutomationNodes:
         output = invoke_llm(
             system_prompt=PERSONALIZE_EMAIL_PROMPT,
             user_message=lead_data,
-            model="gemini-1.5-flash",
+            model="claude-haiku-4-5-20251001",
             response_format=EmailResponse
         )
         
@@ -527,7 +571,7 @@ class OutReachAutomationNodes:
         spin_questions = invoke_llm(
             system_prompt=GENERATE_SPIN_QUESTIONS_PROMPT,
             user_message=global_research_report,
-            model="gemini-1.5-flash"
+            model="claude-haiku-4-5-20251001"
         )
         
         inputs = f"""
@@ -544,7 +588,7 @@ class OutReachAutomationNodes:
         interview_script = invoke_llm(
             system_prompt=WRITE_INTERVIEW_SCRIPT_PROMPT,
             user_message=inputs,
-            model="gemini-1.5-flash"
+            model="claude-haiku-4-5-20251001"
         )
         
         interview_script_doc = Report(
