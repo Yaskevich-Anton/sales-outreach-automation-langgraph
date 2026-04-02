@@ -14,3 +14,6 @@ colorama
 python-dotenv
 bs4
 unstructured
+fastapi
+uvicorn[standard]
+python-dotenv
