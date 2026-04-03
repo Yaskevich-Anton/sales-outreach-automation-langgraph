@@ -7,7 +7,7 @@ from langchain_voyageai import VoyageAIEmbeddings
 def get_vector_store():
     """Get or create the vector store."""
     database_path = "database"
-    embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+    embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
 
     # Всегда пересоздаём векторную базу — локальная несовместима
     loader = DirectoryLoader("./data/case_studies")
