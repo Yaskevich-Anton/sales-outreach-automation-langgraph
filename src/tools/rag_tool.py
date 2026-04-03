@@ -7,20 +7,15 @@ from langchain_voyageai import VoyageAIEmbeddings
 def get_vector_store():
     """Get or create the vector store."""
     database_path = "database"
-    embeddings = VoyageAIEmbeddings(
-        model="voyage-3",  # Или voyage-2
-        voyage_api_key="pa-VqaExeao4cpakPNhQncYK7nE3ZKbeP30heOshlNAdAs",
+    embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+
+    # Всегда пересоздаём векторную базу — локальная несовместима
+    loader = DirectoryLoader("./data/case_studies")
+    docs = loader.load()
+    vectorstore = Chroma.from_documents(
+        docs, embeddings, persist_directory=database_path
     )
-    
-    if os.path.exists(database_path) and os.listdir(database_path):
-        # Use the existing vector store
-        vectorstore = Chroma(persist_directory=database_path, embedding_function=embeddings)
-    else:
-        # Load documents and create a new vector store
-        loader = DirectoryLoader("./data/case_studies")
-        docs = loader.load()
-        vectorstore = Chroma.from_documents(docs, embeddings, persist_directory=database_path)
-    
+
     return vectorstore
 
 def fetch_similar_case_study(description):
