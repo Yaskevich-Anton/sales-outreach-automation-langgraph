@@ -1,0 +1,7 @@
+cat > nixpacks.toml << 'EOF'
+[phases.install]
+cmds = ["pip install fastapi uvicorn[standard] python-dotenv pyairtable langchain-google-genai langgraph google-auth-oauthlib google-api-python-client colorama pydantic requests html2text httpx langchain-community"]
+
+[start]
+cmd = "uvicorn api:app --host 0.0.0.0 --port 8080"
+EOF
