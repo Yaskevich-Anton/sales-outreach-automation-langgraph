@@ -121,7 +121,7 @@ The system follows the process to manage lead research and outreach efficiently 
    Create a copy of the `.env.example` file:
 
    ```bash
-   cp .env.example .env
+   cp .env .env
    ```
 
    After running this command, open the new `.env` file and add your API keys as needed.
