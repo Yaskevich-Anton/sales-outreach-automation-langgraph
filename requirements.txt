@@ -18,3 +18,4 @@ fastapi
 uvicorn[standard]
 python-dotenv
 html2text
+langchain_voyageai
