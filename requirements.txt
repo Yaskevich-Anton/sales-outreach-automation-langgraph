@@ -17,3 +17,4 @@ unstructured
 fastapi
 uvicorn[standard]
 python-dotenv
+html2text
