@@ -22,18 +22,45 @@ def get_current_date():
     return datetime.now().strftime("%Y-%m-%d")
 
 def get_google_credentials():
+    import json
+    import tempfile
+
     creds = None
-    if os.path.exists('token.json'):
+
+    # Сначала пробуем прочитать token из переменной окружения
+    token_json = os.getenv('GOOGLE_TOKEN_JSON')
+    if token_json:
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+            f.write(token_json)
+            temp_token_path = f.name
+        creds = Credentials.from_authorized_user_file(temp_token_path, SCOPES)
+    elif os.path.exists('token.json'):
         creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
-            flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
+            credentials_json = os.getenv('GOOGLE_CREDENTIALS_JSON')
+            if credentials_json:
+                with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+                    f.write(credentials_json)
+                    temp_creds_path = f.name
+                flow = InstalledAppFlow.from_client_secrets_file(temp_creds_path, SCOPES)
+            else:
+                flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
             creds = flow.run_local_server(port=0)
-        with open('token.json', 'w') as token:
-            token.write(creds.to_json())
+
+        # Сохраняем обновлённый токен обратно
+        token_data = creds.to_json()
+        try:
+            with open('token.json', 'w') as token:
+                token.write(token_data)
+        except Exception:
+            pass
+
     return creds
+
     
 def get_report(reports, report_name: str):
     """
